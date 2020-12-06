@@ -21,7 +21,7 @@ fi
 
 LICENSE="GPL-2" # GPL-2 only
 SLOT="0"
-IUSE="debug ipv6 livecd make-symlinks math mdev pam selinux sep-usr static syslog systemd"
+IUSE="debug ipv6 livecd make-symlinks math mdev ntp pam selinux sep-usr static syslog systemd"
 REQUIRED_USE="pam? ( !static )"
 RESTRICT="test"
 
@@ -107,6 +107,8 @@ src_configure() {
 
 	restore_config .config
 	if [ -f .config ]; then
+		busybox_config_option $(usex ntp y n) NTPD
+		busybox_config_option $(usex pam y n) PAM
 		yes "" | emake -j1 -s oldconfig >/dev/null
 		return 0
 	else
@@ -251,6 +253,10 @@ src_install() {
 	fi
 
 	# add busybox daemon's, bug #444718
+	if busybox_config_enabled NTPD; then
+		newconfd "${FILESDIR}/ntpc.confd" ntpc
+		newinitd "${FILESDIR}/ntpc.initd" ntpc
+	fi
 	if busybox_config_enabled FEATURE_NTPD_SERVER; then
 		newconfd "${FILESDIR}/ntpd.confd" "busybox-ntpd"
 		newinitd "${FILESDIR}/ntpd.initd" "busybox-ntpd"
