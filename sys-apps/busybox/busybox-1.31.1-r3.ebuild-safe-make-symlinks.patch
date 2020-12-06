@@ -1,0 +1,36 @@
+--- a/busybox-1.31.1-r3.ebuild	2020-11-02 07:09:14.000000000 -0500
++++ b/busybox-1.31.1-r3.ebuild	2020-11-28 21:07:32.700600811 -0500
+@@ -303,14 +303,6 @@
+ }
+ 
+ pkg_preinst() {
+-	if use make-symlinks && [[ ! ${VERY_BRAVE_OR_VERY_DUMB} == "yes" ]] && [[ -z "${ROOT}" ]] ; then
+-		ewarn "setting USE=make-symlinks and emerging to / is very dangerous."
+-		ewarn "it WILL overwrite lots of system programs like: ls bash awk grep (bug 60805 for full list)."
+-		ewarn "If you are creating a binary only and not merging this is probably ok."
+-		ewarn "set env VERY_BRAVE_OR_VERY_DUMB=yes if this is really what you want."
+-		die "silly options will destroy your system"
+-	fi
+-
+ 	if use make-symlinks ; then
+ 		mv "${ED}"/usr/share/${PN}/busybox-links.tar "${T}"/ || die
+ 	fi
+@@ -322,7 +314,17 @@
+ 	if use make-symlinks ; then
+ 		cd "${T}" || die
+ 		mkdir _install
+-		tar xf busybox-links.tar -C _install || die
++		safelinks=$(
++			tar tf busybox-links.tar |
++			grep -v '/$' |
++			while read f; do
++				PATH="${ROOT}/usr/sbin:${ROOT}/usr/bin:${ROOT}/sbin:${ROOT}/bin" \
++				which "$(basename ${f})" >/dev/null 2>&1 ||
++				echo "${f}"
++			done
++		)
++		[[ -n "${safelinks}" ]] || die "no links to copy safely, would destroy your system: remove USE=make-symlinks"
++		tar xf busybox-links.tar -C _install ${safelinks} || die
+ 		cp -vpPR _install/* "${ROOT}"/ || die "copying links for ${x} failed"
+ 	fi
+ 
