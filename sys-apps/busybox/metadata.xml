@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+  <maintainer type="project">
+    <email>rafdev@dinapo.li</email>
+    <name>Raffaello D. Di Napoli</name>
+  </maintainer>
+  <use>
+    <flag name="eselect-sh">Enable features to use BusyBox as system shell, and install alternate version of <pkg>app-eselect/eselect-sh</pkg> to support BusyBox</flag>
+    <flag name="make-symlinks">Install a symlink for every BusyBox applet, as long as executable with same name does not already exist in the system</flag>
+    <flag name="ntp">Enable NTP client applet; NTP server applet can be enabled via savedconfig</flag>
+  </use>
+</pkgmetadata>
