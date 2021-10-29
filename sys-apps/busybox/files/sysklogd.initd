@@ -1,0 +1,56 @@
+#!/sbin/openrc-run
+# Copyright 2021 Raffaello D. Di Napoli
+# Distributed under the terms of the GNU General Public License v2
+
+depend() {
+	need clock hostname
+	provide logger
+}
+
+use_tty() {
+	# Will ONLY evaluate as false if $TTY has been explicitly set to an
+	# empty string.
+	test -n "${TTY-unset}"
+}
+
+start() {
+	ebegin 'Starting syslog components'
+	if ! use_tty; then
+		SYSLOGD_OPTS="-O ${LOGFILE} ${SYSLOGD_OPTS}"
+	fi
+	if ! start-stop-daemon --start --exec /bin/busybox --name syslogd \
+		--pidfile /run/syslogd.pid -- ${SYSLOGD_OPTS}
+	then
+		eend ${?} 'Failed to start syslogd'
+		return
+	fi
+	if use_tty; then
+		if ! start-stop-daemon --start --exec /bin/sh \
+			--pidfile /run/sysklogd-logread.pid -- -c "
+				exec >/dev/tty${TTY:-12} 2>&1
+				{
+					exec /bin/busybox logread -F &
+					echo \${!} >/run/sysklogd-logread.pid
+				} |
+				tee \"${LOGFILE}\" &
+			"
+		then
+			eend ${?} 'Failed to start TTY logger'
+			# Not a fatal failure; there’s still the log file.
+		fi
+	fi
+	start-stop-daemon --start --exec /bin/busybox --name klogd \
+		--pidfile /run/klogd.pid -- ${KLOGD_OPTS}
+	eend ${?} 'Failed to start klogd'
+	# Consider this a success anyway, since syslogd is running.
+	return 0
+}
+
+stop() {
+	ebegin 'Stopping syslog services'
+	local ret=0 pidfile
+	for pidfile in klogd sysklogd-logread syslogd; do
+		start-stop-daemon --stop --pidfile /run/${pidfile}.pid || ret=${?}
+	done
+	eend ${ret} 'Failed to stop one or more syslog services'
+}

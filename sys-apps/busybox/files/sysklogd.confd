@@ -1,0 +1,23 @@
+# Config file for /etc/init.d/busybox-sysklogd
+
+# Uncomment if you need remote logging.
+#rc_need='net'
+
+# Path to the file where all the messages will be logged.
+LOGFILE=/var/log/messages
+
+# Virtual terminal where syslog will be streamed by logread.
+# Set to an empty value to disable streaming to TTY.
+#TTY=12
+
+# Run "/sbin/syslogd --help" to see all possible options.
+# Everybody should want to include millisecond in timestamps.
+SYSLOGD_OPTS='-t'
+# Log to console; see also $TTY.
+SYSLOGD_OPTS="${SYSLOGD_OPTS} -C256"
+# Customize $LOGFILE rotation. Presently, these will only apply if $TTY=''.
+SYSLOGD_OPTS="${SYSLOGD_OPTS} -s 1024 -b 2"
+
+# Run "/sbin/klogd --help" to see all possible options.
+# By default, we send warnings and above to the console.
+KLOGD_OPTS='-c 3'
