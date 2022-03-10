@@ -1,5 +1,5 @@
 # Copyright 1999-2020 Gentoo Authors
-# Copyright 2021 Raffaello D. Di Napoli
+# Copyright 2021, 2022 Raffaello D. Di Napoli
 # Distributed under the terms of the GNU General Public License v2
 
 # See `man savedconfig.eclass` for info on how to use USE=savedconfig.
@@ -22,7 +22,14 @@ fi
 
 LICENSE="GPL-2" # GPL-2 only
 SLOT="0"
-IUSE="debug eselect-sh ipv6 make-symlinks math mdev ntp pam selinux static syslog systemd"
+# Some USE flags allow BusyBox to satisfy virtuals:
+# awk		virtual/awk::bbcore (::gentoo does not check for USE=awk)
+# less		virtual/pager::bbcore
+# man		virtual/man::bbcore
+# syslog	virtual/logger::gentoo
+# vi		virtual/editor::bbcore
+# mta		virtual/mta::bbcore
+IUSE="awk debug eselect-sh ipv6 less make-symlinks man math mdev mta ntp pam selinux static syslog systemd vi"
 REQUIRED_USE="pam? ( !static )"
 RESTRICT="test"
 
@@ -192,21 +199,19 @@ src_configure() {
 
 	# Apply USE flags.
 
-	# These are defaulted on first config to one value, and the USE flag
-	# can override saved config with the other value. This allows USE
-	# flags some control, without completely taking over config, so the
-	# user can still configure irrespective of USE flags.
+	# These flags to force turning on their respective applets, but
+	# don’t force turning them off just because the flag isn’t set.
 	if use eselect-sh; then
 		busybox_config_option y {,SH_IS_}ASH
 		# TODO more
 	fi
+	# Don’t enable IPv6 applets; let the user take care of that.
 	if ! use ipv6; then
-		# Disable IPv6 applets.
-		busybox_config_option n FEATURE_IPV6
 		busybox_config_option n TRACEROUTE6
 		busybox_config_option n PING6
 		busybox_config_option n UDHCPC6
 	fi
+	# Don’t disable this; NTPD_SERVER requires it, and we don’t control that one.
 	if use ntp; then
 		busybox_config_option y NTPD
 	fi
@@ -217,11 +222,17 @@ src_configure() {
 	fi
 	# These other flags toggle the corresponding config on AND off,
 	# overriding saved config every time.
+	busybox_config_option awk AWK
+	busybox_config_option ipv6 FEATURE_IPV6
+	busybox_config_option less LESS
+	busybox_config_option man MAN
 	busybox_config_option math FEATURE_AWK_LIBM
+	busybox_config_option mta SENDMAIL
 	busybox_config_option pam PAM
 	busybox_config_option selinux SELINUX
 	busybox_config_option static STATIC{,_LIBGCC}
 	busybox_config_option systemd FEATURE_SYSTEMD
+	busybox_config_option vi VI
 
 	emake -j1 oldconfig >/dev/null
 }
