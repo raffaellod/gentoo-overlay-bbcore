@@ -159,20 +159,9 @@ src_configure() {
 		busybox_config_option n EXTRA_COMPAT
 		busybox_config_option n FEATURE_UTMP
 		busybox_config_option n FEATURE_VI_REGEX_SEARCH
-	elif use elibc_uclibc; then
-		# Disable features that uClibc doesn't (yet?) provide.
-		busybox_config_option n FEATURE_SYNC_FANCY # Gentoo #567598
-		busybox_config_option n NSENTER
 	fi
 
 	if ${newconfig}; then
-		if use elibc_uclibc; then
-			# If these are not set and we are using a uclibc/busybox setup
-			# all calls to system() will fail.
-			busybox_config_option y {,SH_IS_}ASH
-			busybox_config_option n {,SH_IS_}HUSH
-		fi
-
 		# Default to off a bunch of uncommon options, as well as those
 		# we support via USE flags, which will be re-enabled later if
 		# the corresponding USE flag is set.
