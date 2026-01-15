@@ -29,7 +29,7 @@ SLOT="0"
 # syslog	virtual/logger::gentoo
 # vi		virtual/editor::bbcore
 # mta		virtual/mta::bbcore
-IUSE="awk debug eselect-sh ipv6 less make-symlinks man math mdev mta ntp pam selinux static syslog systemd vi"
+IUSE="awk debug dhcp dhcpd eselect-sh ipv6 less make-symlinks man math mdev mta ntp pam selinux static syslog systemd vi"
 REQUIRED_USE="pam? ( !static )"
 RESTRICT="test"
 
@@ -180,7 +180,7 @@ src_configure() {
 			ADD_SHELL ASH_OPTIMIZE_FOR_SIZE \
 			BEEP BOOTCHARTD \
 			CHPST CRONTAB \
-			DC DEVFSD DNSD DPKG{,_DEB} \
+			DC DEVFSD DHCPRELAY DNSD DPKG{,_DEB} DUMPLEASES \
 			ENVDIR ENVUIDGID \
 			FAKEIDENTD FBSPLASH FEATURE_{DEVFS,NTPD_SERVER} FOLD FSCK_MINIX FTP{D,GET,PUT} \
 			HALT HOSTID HTTPD HUSH \
@@ -194,7 +194,7 @@ src_configure() {
 			RDEV READPROFILE REBOOT REFORMIME REMOVE_SHELL RESUME RFKILL RPM RPM2CPIO RUN_INIT RUNSV{,DIR} \
 			SETUIDGID SLATTACH SH_IS_HUSH SHELL_HUSH SMEMCAP SOFTLIMIT SULOGIN SV{,C,LOGD,OK} SYSLOGD \
 			TASKSET TCPSVD TFTP_DEBUG \
-			UBI{ATTACH,DETACH,{MK,RM,RS,UPDATE}VOL} UDPSVD UU{DE,EN}CODE
+			UBI{ATTACH,DETACH,{MK,RM,RS,UPDATE}VOL} UDHCP{C,C6,D} UDPSVD UU{DE,EN}CODE
 		busybox_config_option '"/run"' PID_FILE_PATH
 		busybox_config_option '"/run/ifstate"' IFUPDOWN_IFSTATE_PATH
 	fi
@@ -203,6 +203,11 @@ src_configure() {
 
 	# These flags to force turning on their respective applets, but
 	# don’t force turning them off just because the flag isn’t set.
+
+	# Disabling either of these means not getting a DHCPv6 client.
+	if ! use dhcp || ! use ipv6; then
+		busybox_config_option n UDHCPC6
+	fi
 	if use eselect-sh; then
 		busybox_config_option y {,SH_IS_}ASH
 		# TODO more
@@ -211,7 +216,6 @@ src_configure() {
 	if ! use ipv6; then
 		busybox_config_option n TRACEROUTE6
 		busybox_config_option n PING6
-		busybox_config_option n UDHCPC6
 	fi
 	# Don’t disable this; NTPD_SERVER requires it, and we don’t control that one.
 	if use ntp; then
@@ -222,9 +226,13 @@ src_configure() {
 		busybox_config_option y FEATURE_{IPC_SYSLOG,SYSLOGD_PRECISE_TIMESTAMPS}
 		busybox_config_option n FEATURE_KMSG_SYSLOG
 	fi
+
 	# These other flags toggle the corresponding config on AND off,
 	# overriding saved config every time.
+
 	busybox_config_option awk AWK
+	busybox_config_option dhcp UDHCPC
+	busybox_config_option dhcpd DUMPLEASES UDHCPD
 	busybox_config_option ipv6 FEATURE_IPV6
 	busybox_config_option less LESS
 	busybox_config_option man MAN
