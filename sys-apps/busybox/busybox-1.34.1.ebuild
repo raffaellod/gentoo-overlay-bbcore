@@ -78,6 +78,7 @@ busybox_config_enabled() {
 # Patches go here!
 PATCHES=(
 	"${FILESDIR}"/${PN}-1.34.1-gcc-14.patch
+	"${FILESDIR}"/${PN}-1.36.1-kernel-6.8.patch
 
 	# "${FILESDIR}"/${P}-*.patch
 )
